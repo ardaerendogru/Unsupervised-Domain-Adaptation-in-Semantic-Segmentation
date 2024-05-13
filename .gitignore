@@ -1,0 +1,5 @@
+Cityscapes/Cityspaces
+GTA5/images
+GTA5/labels
+models/deeplab_resnet_pretrained_imagenet.pth
+wandb/
