@@ -41,6 +41,8 @@ def train(model, loss_fn, optimizer,train_dataloader,test_dataloader, epoch, pro
         valid_loss = 0
         train_miou = 0
         validation_miou = 0
+        train_iou = np.zeros(19)
+        validation_iou = np.zeros(19)
         for step, (image, label) in enumerate(train_dataloader):
             image, label = image.cuda(), label.type(torch.LongTensor).cuda()
             out = model(image)
@@ -53,7 +55,9 @@ def train(model, loss_fn, optimizer,train_dataloader,test_dataloader, epoch, pro
             out_labels = torch.argmax(torch.softmax(out,dim=1),dim=1)
             hist = fast_hist(out_labels.cpu().numpy(),label.cpu().numpy(),20)
             train_miou += np.array(per_class_iou(hist)).flatten()[:19].mean()
+            train_iou += np.array(per_class_iou(hist)).flatten()[:19]
         lr = poly_lr_scheduler(optimizer, init_lr, i, max_iter=300, power=0.95)
+        train_losses.append(train_loss/len(train_dataloader))
         train_mious.append(train_miou/len(train_dataloader))
         model.eval()
         with torch.inference_mode():
@@ -65,14 +69,19 @@ def train(model, loss_fn, optimizer,train_dataloader,test_dataloader, epoch, pro
                 out_labels = torch.argmax(torch.softmax(out,dim=1),dim=1)
                 hist = fast_hist(out_labels.cpu().numpy(),label.cpu().numpy(),20)
                 validation_miou += np.array(per_class_iou(hist)).flatten()[:19].mean()
+                validation_iou += np.array(per_class_iou(hist)).flatten()[:19]
+            validation_losses.append(valid_loss/len(test_dataloader))
             validation_mious.append(validation_miou/len(test_dataloader))
         train_loss_avg = train_loss/len(train_dataloader)
         validation_loss_avg = valid_loss/len(test_dataloader)
         train_miou_avg = train_miou/len(train_dataloader)
         validation_miou_avg = validation_miou/len(test_dataloader)
+        train_iou_avg = train_iou/len(train_dataloader)
+        validation_iou_avg = validation_iou/len(test_dataloader)
         print(f'Epoch: {i}')
         print(f'Train Loss: {train_loss_avg}, Validation Loss: {validation_loss_avg}')
         print(f'Train mIoU: {train_miou_avg}, Validation mIoU: {validation_miou_avg}')
         wandb.log({"train_loss_avg": train_loss_avg, "validation_loss_avg": validation_loss_avg, "train_miou_avg": train_miou_avg, "validation_miou_avg": validation_miou_avg})
 
-    return train_losses, validation_losses, train_mious, validation_mious
+    return train_losses, validation_losses, train_mious, validation_mious, train_iou_avg, validation_iou_avg
+

@@ -62,7 +62,7 @@ class GTA5(Dataset):
         if self.transform_label and not self.augmentations:
             label = self.transform_label(label)
         
-        if self.augmentations and not self.transform_image and not self.transform_label:
+        if self.augmentations:
             img = np.array(img)
             label = np.array(label)
             transformed = self.augmentations(image=img, mask=label)
@@ -101,7 +101,7 @@ class GTA5(Dataset):
                 if rgb in self.color_to_id.keys():
                     gray_pixels[i, j] = self.color_to_id[rgb]
                 else:
-                    gray_pixels[i, j] = 19
+                    gray_pixels[i, j] = 255
         
         return gray_img
 
