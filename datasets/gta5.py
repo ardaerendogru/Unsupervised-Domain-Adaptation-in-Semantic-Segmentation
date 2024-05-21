@@ -4,8 +4,8 @@ import torch
 from PIL import Image
 import os
 import numpy as np
-
-
+from UDA.FDA import FDA_transform
+import random
 class GTA5(Dataset):
     """
     GTA5 Dataset class for loading and transforming GTA5 dataset images and labels for semantic segmentation tasks.
@@ -18,12 +18,16 @@ class GTA5(Dataset):
         data (list): List of tuples containing paths to image and corresponding label.
         color_to_id (dict): Mapping from RGB color values to class IDs.
     """
-    def __init__(self, GTA5_path:str,transform_image=None, transform_label=None, augmentations=None):
+    def __init__(self, GTA5_path:str,transform_image=None, transform_label=None, augmentations=None, FDA = None):
         self.GTA5_path = GTA5_path
         self.transform_image = transform_image
         self.transform_label = transform_label
         self.augmentations = augmentations
         self.data = []
+        self.target_images = []
+        self.FDA = FDA
+        for path in os.listdir(f'{GTA5_path}/images'):
+            self.data.append((f'{GTA5_path}/images/{path}',f'{GTA5_path}/labels/{path}'))
         self.color_to_id = {
             (128, 64, 128):0,   #road
             (244, 35, 232): 1,  # sidewalk
@@ -45,16 +49,18 @@ class GTA5(Dataset):
             (0, 0, 230): 17,    # motorcycle
             (119, 11, 32): 18   # bicycle
         }
-
-        for path in os.listdir(f'{GTA5_path}/images'):
-            self.data.append((f'{GTA5_path}/images/{path}',f'{GTA5_path}/labels/{path}'))
-            
+        if self.FDA:
+            city_path = GTA5_path.replace('GTA5', 'Cityscapes')
+            for root, dirs, files in os.walk(f'{city_path}/Cityspaces/gtFine/train'): 
+                for file in files:
+                    if 'Id' in file:
+                        self.target_images.append((f'{root}/{file}',f'{root}/{file}'.replace('gtFine/','images/').replace('_gtFine_labelTrainIds', '_leftImg8bit' )))
         
-
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         "Returns one sample of data (X, y)."
         img_path, label_path = self.data[index]
+        print(img_path)
         img = Image.open(img_path).convert('RGB')  # Ensure image is RGB
         label = self.convert_rgb_to_label(Image.open(label_path).convert('RGB'))
         if self.transform_image and not self.augmentations:
@@ -65,13 +71,22 @@ class GTA5(Dataset):
         if self.augmentations:
             img = np.array(img)
             label = np.array(label)
+            if self.FDA:
+                target_image_pil = Image.open(random.choice(self.target_images)[1]).convert('RGB').resize((img.shape[1], img.shape[0]))
+                target_image = np.array(target_image_pil)
+                print(target_image.shape, img.shape)
+                img = FDA_transform(img, target_image, beta=self.FDA)
+                # fda_transformed = img
+
             transformed = self.augmentations(image=img, mask=label)
             img = transformed['image']
             label = transformed['mask']
             img = torch.from_numpy(img).permute(2, 0, 1).float()
             label = torch.from_numpy(label).long()
+            
 
-        return img, label
+
+        return img, label #, fda_transformed
 
     def __len__(self):
         return len(self.data)

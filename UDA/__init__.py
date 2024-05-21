@@ -1,2 +1,0 @@
-from FDA import FDA
-

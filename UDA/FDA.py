@@ -1,5 +1,5 @@
 import numpy as np
-
+import os 
 def mutate_low_freq(source_amp:np.array, target_amp:np.array, beta:float)->np.array:
     """
     Mutates the low-frequency components of the source amplitude spectrum by replacing them with those from the target amplitude spectrum within a specified frequency band.
@@ -20,7 +20,7 @@ def mutate_low_freq(source_amp:np.array, target_amp:np.array, beta:float)->np.ar
     source_amp[y1:y2,x1:x2,:] = target_amp[y1:y2,x1:x2,:]
     return source_amp
 
-def FDA(source_image:np.array, target_img:np.array, beta:float)->np.array:
+def FDA_transform(source_image:np.array, target_img:np.array, beta:float)->np.array:
     """
     Performs Frequency Domain Adaptation (FDA) between a source image and a target image by swapping low-frequency components.
 
