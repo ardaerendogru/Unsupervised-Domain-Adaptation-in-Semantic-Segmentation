@@ -3,23 +3,20 @@ from typing import Tuple
 import torch 
 from PIL import Image
 import os
-
+import numpy as np
 class CityScapes(Dataset):
     """
     CityScapes Dataset class for loading and transforming CityScapes dataset images and labels for semantic segmentation tasks.
 
     Attributes:
-        cityscapes_path (str): Path to the Cityscapes dataset directory.
-        train_val (str): Subdirectory to use, typically 'train', 'val', or 'test'.
-        transform_image (callable, optional): A function/transform that takes in a PIL image and returns a transformed version.
-        transform_label (callable, optional): A function/transform that takes in a PIL label image and returns a transformed version.
+        cityscapes_path (str): Path to the CityScapes dataset directory.
+        transform (callable, optional): A function/transform that takes in a numpy image and label and returns transformed versions. Expected to be an Albumentations augmentation.
         data (list): List of tuples containing paths to image and corresponding label.
     """
-    def __init__(self, cityscapes_path:str, train_val:str,transform_image=None, transform_label=None):
+    def __init__(self, cityscapes_path:str, train_val:str, transform = None):
 
         self.cityscapes_path = cityscapes_path
-        self.transform_image = transform_image
-        self.transform_label = transform_label
+        self.transform = transform
         self.data = []
         for root, dirs, files in os.walk(f'{cityscapes_path}/Cityspaces/gtFine/{train_val}'): 
             for file in files:
@@ -33,12 +30,14 @@ class CityScapes(Dataset):
         label_path, img_path = self.data[index]
         img = Image.open(img_path).convert('RGB')  # Ensure image is RGB
         label = Image.open(label_path)
-        if self.transform_image:
-            img = self.transform_image(img)
-        if self.transform_label:
-            label = self.transform_label(label)
-        
-
+        img = np.array(img) 
+        label = np.array(label)
+        if self.transform:
+            transformed = self.transform(image=img, mask=label)
+            img = transformed['image']
+            label = transformed['mask']
+        img = torch.from_numpy(img).permute(2, 0, 1).float()
+        label = torch.from_numpy(label).long()
         return img, label
 
     def __len__(self):

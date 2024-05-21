@@ -192,6 +192,10 @@ def save_results(model, model_results, filename, height, width, iterations, igno
             file.write(f"STD Latency = {deeplab_latency_fps[1]}\n")
             file.write(f"Mean FPS = {deeplab_latency_fps[2]}\n")
             file.write(f"STD FPS = {deeplab_latency_fps[3]}\n")
+            file.write(f'Training Loss = {model_results[0][-1]}\n')
+            file.write(f'Validation Loss = {model_results[1][-1]}\n')
+            file.write(f'Training mIoU = {model_results[2][-1]}\n')
+            file.write(f'Validation mIoU = {model_results[3][-1]}\n')
         for i in range(0, 19):
             file.write(f"Training IoU for class {id_to_label[i]} = {model_results[4][i]}\n")
         for i in range(0, 19):
