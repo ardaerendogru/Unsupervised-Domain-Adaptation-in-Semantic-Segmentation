@@ -3,10 +3,13 @@ from PIL import Image
 from fvcore.nn import FlopCountAnalysis, flop_count_table
 import torch
 import time
-import copy
 from typing import Tuple
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy.ndimage import gaussian_filter
+from scipy.special import erfinv
 
+import matplotlib.pyplot as plt
 id_to_label = {
     0: 'road',
     1: 'sidewalk',
@@ -275,4 +278,15 @@ def plot_IoU(model_results, model_name,step, train_dataset, validation_dataset):
     plt.show()
     fig.savefig(f"./results/images/{model_name}_{step}_IoU_barplot.svg", format='svg', dpi=300)
 
+
+
+
+def generate_cow_mask(img_size, sigma, p, batch_size):
+    N = np.random.normal(size=img_size) 
+    Ns = gaussian_filter(N, sigma)
+    t = erfinv(p*2 - 1) * (2**0.5) * Ns.std() + Ns.mean()
+    masks = []
+    for i in range(batch_size):
+        masks.append((Ns > t).astype(float).reshape(1,*img_size))
+    return np.array(masks)
 

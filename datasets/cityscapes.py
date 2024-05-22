@@ -13,7 +13,7 @@ class CityScapes(Dataset):
         transform (callable, optional): A function/transform that takes in a numpy image and label and returns transformed versions. Expected to be an Albumentations augmentation.
         data (list): List of tuples containing paths to image and corresponding label.
     """
-    def __init__(self, cityscapes_path:str, train_val:str, transform = None):
+    def __init__(self, cityscapes_path:str, train_val:str, transform = None, DACS = None):
 
         self.cityscapes_path = cityscapes_path
         self.transform = transform
@@ -36,6 +36,8 @@ class CityScapes(Dataset):
             transformed = self.transform(image=img, mask=label)
             img = transformed['image']
             label = transformed['mask']
+
+
         img = torch.from_numpy(img).permute(2, 0, 1).float()
         label = torch.from_numpy(label).long()
         return img, label

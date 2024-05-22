@@ -18,7 +18,7 @@ class GTA5(Dataset):
         target_images (list): List of tuples containing paths to target images used for FDA, if applicable.
         color_to_id (dict): Mapping from RGB color values to class IDs for segmentation.
     """
-    def __init__(self, GTA5_path:str, transform=None, FDA = None):
+    def __init__(self, GTA5_path:str, transform=None, FDA = None, DACS = None):
         self.GTA5_path = GTA5_path
         self.transform = transform
         self.data = []
@@ -63,16 +63,13 @@ class GTA5(Dataset):
         img = np.array(img)
         label = np.array(label)
         if self.FDA:
-            target_image_pil = Image.open(random.choice(self.target_images)[1]).convert('RGB').resize((img.shape[1], img.shape[0]))
+            target_image_pil = Image.open(random.choice(self.target_images)[1]).convert('RGB').resize((img.shape[1], img.shape[0])) #resizing is unneccesary as beta works in percentage 
             target_image = np.array(target_image_pil)
             img = FDA_transform(img, target_image, beta=self.FDA)
         if self.transform:
             transformed = self.transform(image=img, mask=label)
             img = transformed['image']
             label = transformed['mask']
-
-            
-
         img = torch.from_numpy(img).permute(2, 0, 1).float()
         label = torch.from_numpy(label).long()
         return img, label #, fda_transformed
