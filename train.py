@@ -117,7 +117,6 @@ def train_dacs(model, loss_fn, optimizer, source_dataloader, target_dataloader,t
     validation_mious = []
     target_images = [image for image, _ in target_dataloader]
     init_lr = optimizer.param_groups[0]['lr']
-    batch_size = source_dataloader.batch_size
     
 
     run = wandb.init(
@@ -143,19 +142,30 @@ def train_dacs(model, loss_fn, optimizer, source_dataloader, target_dataloader,t
             validation_iou = np.zeros(19)
 
         for step, (image, label) in enumerate(source_dataloader):
-            selected_target_images = random.choice(target_images)
-            selected_target_images = F.interpolate(selected_target_images, size=(image.shape[-2],image.shape[-1]), mode='bilinear', align_corners=False)
+            if step % 10 == 0:
+                print(f'Step: {step/len(source_dataloader)}')
+            
+
+            image, label = image.cuda(), label.long().cuda()
+            selected_target_images = random.choice(target_images).cuda()
+            selected_target_images = selected_target_images[0:image.shape[0],:,:,:]
+            selected_target_images = F.interpolate(selected_target_images, size=(image.shape[-2], image.shape[-1]), mode='bilinear', align_corners=False)
 
             label_target = model(selected_target_images)
-            label_target = torch.argmax(torch.softmax(label_target,dim=1),dim=1)
-    
-            mask = generate_cow_mask((image.shape[-2],image.shape[-1]),sigma,0.5, batch_size)
-            mixed_images = image * mask + selected_target_images * (1-mask)
-            mixed_labels = label * mask + label_target * (1-mask)
+            label_target = torch.argmax(torch.softmax(label_target, dim=1), dim=1).long()
 
-            image, label = image.cuda(), label.type(torch.LongTensor).cuda()
-            mixed_images = mixed_images.cuda()
-            mixed_labels = mixed_labels.cuda()
+            mask = generate_cow_mask((image.shape[-2], image.shape[-1]), sigma, 0.5, image.shape[0])
+            
+            mask = torch.from_numpy(mask).cuda()
+
+
+            mixed_images = image * mask + selected_target_images * (1 - mask)
+            mixed_labels = label * mask.squeeze(1) + label_target * (1 - mask.squeeze(1))
+
+            mixed_images = mixed_images.float()
+            mixed_labels = mixed_labels.long()
+            
+            
             out_source = model(image)
             loss_source = loss_fn(out_source, label)
             out_mixed = model(mixed_images)

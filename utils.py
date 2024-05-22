@@ -107,7 +107,7 @@ def label_to_rgb(label:np.ndarray, height:int, width:int):
     for i in range(height):
         for j in range(width):
             class_id = label[i, j]
-            rgb_image[i, j] = id_to_color.get(class_id, (0, 0, 0))  # Default to black if not found
+            rgb_image[i, j] = id_to_color.get(class_id, (255, 255, 255))  # Default to white if not found
     pil_image = Image.fromarray(rgb_image, 'RGB')
     return pil_image
 
@@ -133,7 +133,7 @@ def compute_flops(model:torch.nn.Module, height:int = 512, width:int = 1024):
 
     return ret_dict
 
-def get_latency_and_fps(model:torch.nn.Module, height:int = 512, width:int = 1024, iterations:int=1000)->tuple:
+def get_latency_and_fps(model: torch.nn.Module, height: int = 512, width: int = 1024, iterations: int = 1000) -> tuple:
     """
     Measures the latency and frames per second (FPS) of a given model on a specified input size over a number of iterations.
 
@@ -147,24 +147,25 @@ def get_latency_and_fps(model:torch.nn.Module, height:int = 512, width:int = 102
         tuple: A tuple containing the mean latency in milliseconds, the standard deviation of latency in milliseconds,
                the mean FPS, and the standard deviation of FPS.
     """
-    FPSs = []
     latencies = []
+    fps_records = []
     model.eval()
+    
     with torch.no_grad():
-        for i in range(iterations):
-            image = torch.zeros((1,3, height, width))
-            start = time.time()
+        for _ in range(iterations):
+            image = torch.zeros((1, 3, height, width))
+            start_time = time.time()
             model(image)
-            end = time.time()
-            latency = end-start
-            latencies.append(latency)
-            FPS = 1/latency
-            FPSs.append(FPS)
-    mean_latency = np.array(latencies).mean()*1000
-    std_latency = np.array(latencies).std()*1000
-    mean_FPS = np.array(FPSs).mean()
-    std_FPS = np.array(FPSs).std()  
-    return mean_latency, std_latency, mean_FPS, std_FPS
+            elapsed_time = time.time() - start_time
+            latencies.append(elapsed_time)
+            fps_records.append(1 / elapsed_time)
+    
+    mean_latency = np.mean(latencies) * 1000  # Convert to milliseconds
+    std_latency = np.std(latencies) * 1000    # Convert to milliseconds
+    mean_fps = np.mean(fps_records)
+    std_fps = np.std(fps_records)
+    
+    return mean_latency, std_latency, mean_fps, std_fps
 
 def save_results(model, model_results, filename, height, width, iterations, ignore_model_measurements=False):
     """
@@ -204,7 +205,7 @@ def save_results(model, model_results, filename, height, width, iterations, igno
         for i in range(0, 19):
             file.write(f"Validation IoU for class {id_to_label[i]} = {model_results[5][i]}\n")
 
-def plot_loss(model_results, model_name,step, train_dataset, validation_dataset):
+def plot_loss(model_results, model_name, step, train_dataset, validation_dataset):
     """
     Plots the training and validation loss over epochs for a given model.
 
@@ -215,17 +216,21 @@ def plot_loss(model_results, model_name,step, train_dataset, validation_dataset)
         train_dataset (str): The name of the training dataset.
         validation_dataset (str): The name of the validation dataset.
     """
-    fig, ax = plt.subplots(figsize=(12, 6))
-    plt.title(f'Train vs. Validation Loss ({model_name})')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.plot(range(len(model_results[0])),model_results[0], label=f"Train Loss - {train_dataset}")
-    plt.plot(range(len(model_results[1])),model_results[1], label=f"Validation Loss - {validation_dataset}")
-    plt.legend(loc="upper right")
-    plt.show()
-    fig.savefig(f"./results/images/{model_name}_{step}_loss.svg", format = 'svg', dpi=300)
+    epochs = range(len(model_results[0]))
+    train_losses = model_results[0]
+    validation_losses = model_results[1]
 
-def plot_mIoU(model_results, model_name,step, train_dataset, validation_dataset):
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.set_title(f'Train vs. Validation Loss ({model_name})')
+    ax.set_xlabel('Epoch')
+    ax.set_ylabel('Loss')
+    ax.plot(epochs, train_losses, label=f"Train Loss - {train_dataset}")
+    ax.plot(epochs, validation_losses, label=f"Validation Loss - {validation_dataset}")
+    ax.legend(loc="upper right")
+    plt.show()
+    fig.savefig(f"./results/images/{model_name}_{step}_loss.svg", format='svg', dpi=300)
+
+def plot_mIoU(model_results, model_name, step, train_dataset, validation_dataset):
     """
     Plots the training and validation mean Intersection over Union (mIoU) over epochs for a given model.
 
@@ -236,17 +241,21 @@ def plot_mIoU(model_results, model_name,step, train_dataset, validation_dataset)
         train_dataset (str): The name of the training dataset.
         validation_dataset (str): The name of the validation dataset.
     """
-    fig, ax = plt.subplots(figsize=(12, 6))
-    plt.title(f'Train vs. Validation mIoU ({model_name})')
-    plt.xlabel('Epoch')
-    plt.ylabel('mIoU')
-    plt.plot(range(len(model_results[2])),model_results[2], label=f"Train mIoU - {train_dataset}")
-    plt.plot(range(len(model_results[3])),model_results[3], label=f"Validation mIoU - {validation_dataset}")
-    plt.legend(loc="upper left")
-    plt.show()
-    fig.savefig(f"./results/images/{model_name}_{step}_mIoU.svg", format = 'svg', dpi=300)
+    epochs = range(len(model_results[2]))
+    train_mIoU = model_results[2]
+    validation_mIoU = model_results[3]
 
-def plot_IoU(model_results, model_name,step, train_dataset, validation_dataset):
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.set_title(f'Train vs. Validation mIoU ({model_name})')
+    ax.set_xlabel('Epoch')
+    ax.set_ylabel('mIoU')
+    ax.plot(epochs, train_mIoU, label=f"Train mIoU - {train_dataset}")
+    ax.plot(epochs, validation_mIoU, label=f"Validation mIoU - {validation_dataset}")
+    ax.legend(loc="upper left")
+    plt.show()
+    fig.savefig(f"./results/images/{model_name}_{step}_mIoU.svg", format='svg', dpi=300)
+
+def plot_IoU(model_results, model_name, step, train_dataset, validation_dataset):
     """
     Plots the training and validation Intersection over Union (IoU) for each class over epochs for a given model.
 
@@ -257,27 +266,29 @@ def plot_IoU(model_results, model_name,step, train_dataset, validation_dataset):
         train_dataset (str): The name of the training dataset.
         validation_dataset (str): The name of the validation dataset.
     """
-    class_names = [id_to_label[i] for i in range(19)]
-    train_iou = [model_results[4][i] for i in range(19)]
-    val_iou = [model_results[5][i] for i in range(19)]
+    num_classes = 19
+    class_names = [id_to_label[i] for i in range(num_classes)]
+    train_iou = [model_results[4][i] for i in range(num_classes)]
+    val_iou = [model_results[5][i] for i in range(num_classes)]
 
     fig, ax = plt.subplots(figsize=(12, 6))
     bar_width = 0.35
-    index = np.arange(len(class_names))
+    index = np.arange(num_classes)
 
-    bar1 = plt.bar(index, train_iou, bar_width, label=f'Train IoU - {train_dataset}')
-    bar2 = plt.bar(index + bar_width, val_iou, bar_width, label=f'Validation IoU - {validation_dataset}')
+    ax.bar(index, train_iou, bar_width, label=f'Train IoU - {train_dataset}')
+    ax.bar(index + bar_width, val_iou, bar_width, label=f'Validation IoU - {validation_dataset}')
 
-    plt.xlabel('Classes')
-    plt.ylabel('IoU')
-    plt.title(f'Training and Validation IoU for Each Class ({model_name})')
-    plt.xticks(index + bar_width / 2, class_names, rotation=45, ha="right")
-    plt.legend()
-    plt.grid(axis='y')
+    ax.set_xlabel('Classes')
+    ax.set_ylabel('IoU')
+    ax.set_title(f'Training and Validation IoU for Each Class ({model_name})')
+    ax.set_xticks(index + bar_width / 2)
+    ax.set_xticklabels(class_names, rotation=45, ha="right")
+    ax.legend()
+    ax.grid(axis='y')
+
     plt.tight_layout()
     plt.show()
     fig.savefig(f"./results/images/{model_name}_{step}_IoU_barplot.svg", format='svg', dpi=300)
-
 
 
 
@@ -289,4 +300,5 @@ def generate_cow_mask(img_size, sigma, p, batch_size):
     for i in range(batch_size):
         masks.append((Ns > t).astype(float).reshape(1,*img_size))
     return np.array(masks)
+
 
