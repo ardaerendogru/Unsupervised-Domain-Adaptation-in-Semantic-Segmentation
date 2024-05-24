@@ -22,39 +22,39 @@ GTA5_MEAN = [129.5363, 127.9398, 123.2765]
 GTA5_STD = [63.8022, 62.4980, 62.0512]
 
 
-augmentations = {
-    'transform1': A.Compose([
-        A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
-        A.HorizontalFlip(p=0.5),
-        A.RandomBrightnessContrast(p=0.5),
-    ]),
-    'transform2': A.Compose([
-        A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
-        A.HueSaturationValue(p=0.5),
-        A.GaussianBlur(kernel_size=(5, 5), sigma=(0.1, 1), p=0.5),
-    ]),
-    'transform3': A.Compose([
-        A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
-        A.HorizontalFlip(p=0.5),
-        A.GaussianBlur(kernel_size=(5, 5), sigma=(0.1, 1), p=0.5),
-        A.GaussNoise(p=0.5),
-    ]),
-    'transform4': A.Compose([
-        A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
-        A.HorizontalFlip(p=0.5),
-        A.HueSaturationValue(p=0.5),
-        A.RandomBrightnessContrast(p=0.5),
-    ]),
-    'transform5': A.Compose([
-        A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
-        A.GaussianBlur(kernel_size=(5, 5), sigma=(0.1, 1), p=0.5),
-        A.GaussNoise(p=0.5),
-    ]),
-    'transform6': A.Compose([
-        A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
-        A.HorizontalFlip(p=0.5),
-        A.GaussNoise(p=0.5),
-        A.RandomBrightnessContrast(p=0.5),
-        A.HueSaturationValue(p=0.5),
-    ])
-}
+# augmentations = {
+#     'transform1': A.Compose([
+#         A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
+#         A.HorizontalFlip(p=0.5),
+#         A.RandomBrightnessContrast(p=0.5),
+#     ]),
+#     'transform2': A.Compose([
+#         A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
+#         A.HueSaturationValue(p=0.5),
+#         A.GaussianBlur(kernel_size=(5, 5), sigma=(0.1, 1), p=0.5),
+#     ]),
+#     'transform3': A.Compose([
+#         A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
+#         A.HorizontalFlip(p=0.5),
+#         A.GaussianBlur(kernel_size=(5, 5), sigma=(0.1, 1), p=0.5),
+#         A.GaussNoise(p=0.5),
+#     ]),
+#     'transform4': A.Compose([
+#         A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
+#         A.HorizontalFlip(p=0.5),
+#         A.HueSaturationValue(p=0.5),
+#         A.RandomBrightnessContrast(p=0.5),
+#     ]),
+#     'transform5': A.Compose([
+#         A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
+#         A.GaussianBlur(kernel_size=(5, 5), sigma=(0.1, 1), p=0.5),
+#         A.GaussNoise(p=0.5),
+#     ]),
+#     'transform6': A.Compose([
+#         A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
+#         A.HorizontalFlip(p=0.5),
+#         A.GaussNoise(p=0.5),
+#         A.RandomBrightnessContrast(p=0.5),
+#         A.HueSaturationValue(p=0.5),
+#     ])
+# }
