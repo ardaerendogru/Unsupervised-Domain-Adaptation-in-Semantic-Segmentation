@@ -172,7 +172,6 @@ def get_id_to_color() -> dict:
         16: (0, 80, 100),     # train
         17: (0, 0, 230),      # motorcycle
         18: (119, 11, 32),    # bicycle
-        19: (255, 255, 255)   # unlabeled
     }
     return id_to_color
 
