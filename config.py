@@ -1,7 +1,7 @@
 # Configuration settings for the project
 import albumentations as A
 # Batch size for dataloaders
-BATCH_SIZE = 1
+BATCH_SIZE = 4
 EPOCHS = 50
 # Number of classes
 NC = 19

@@ -31,7 +31,7 @@ def compute_flops(model:torch.nn.Module, height:int = 512, width:int = 1024)->di
 
     return ret_dict
 
-def get_latency_and_fps(model: torch.nn.Module, height: int = 512, width: int = 1024, iterations: int = 1000) -> tuple:
+def get_latency_and_fps(model: torch.nn.Module, height: int = 512, width: int = 1024, iterations: int = 1000, device:str='cuda') -> tuple:
 
 
     """
@@ -52,15 +52,16 @@ def get_latency_and_fps(model: torch.nn.Module, height: int = 512, width: int = 
     latencies = []
     fps_records = []
     model.eval()
-    
+    model = model.to(device)
     with torch.no_grad():
         for _ in range(iterations):
-            image = torch.zeros((1, 3, height, width))
+            image = torch.zeros((1, 3, height, width)).to(device)
             start_time = time.time()
             model(image)
-            elapsed_time = time.time() - start_time
-            latencies.append(elapsed_time)
-            fps_records.append(1 / elapsed_time)
+            end_time = time.time() 
+            latency = end_time - start_time
+            latencies.append(latency)
+            fps_records.append(1 / latency)
     
     mean_latency = np.mean(latencies) * 1000  # Convert to milliseconds
     std_latency = np.std(latencies) * 1000    # Convert to milliseconds
@@ -69,7 +70,7 @@ def get_latency_and_fps(model: torch.nn.Module, height: int = 512, width: int = 
     
     return mean_latency, std_latency, mean_fps, std_fps
 
-def save_results(model:torch.nn.Module, model_results:list, filename:str, height:int, width:int, iterations:int, ignore_model_measurements:bool=False)->None:
+def save_results(model:torch.nn.Module, model_results:list, filename:str, height:int, width:int, iterations:int, ignore_model_measurements:bool=False, device:str='cuda')->None:
 
 
     """
@@ -92,8 +93,7 @@ def save_results(model:torch.nn.Module, model_results:list, filename:str, height
 
     if not ignore_model_measurements:
         deeplab_params_flops = compute_flops(model, height=height, width=width)
-        deeplab_latency_fps = get_latency_and_fps(model, height=height, width=width,iterations=iterations)
-
+        deeplab_latency_fps = get_latency_and_fps(model, height=height, width=width,iterations=iterations, device = device)
     with open(f'./results/logs/{filename}.txt', 'w') as file:
         if not ignore_model_measurements:
             file.write(f"Parameters : {deeplab_params_flops['Parameters']}\n")
