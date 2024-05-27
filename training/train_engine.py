@@ -267,7 +267,7 @@ def train(
     validation_losses = []
     train_mious = []
     validation_mious = []
-
+    init_lr = optimizer.param_groups[0]['lr']
     if target_dataloader:
         target_images = [image for image, _ in target_dataloader]
         
@@ -309,7 +309,7 @@ def train(
         print(f'Train mIoU: {train_miou}, Validation mIoU: {validation_miou}')
 
         poly_lr_scheduler(optimizer = optimizer,
-                          init_lr = optimizer.param_groups[0]['lr'],
+                          init_lr = init_lr,
                           iter = epoch, 
                           max_iter = epochs,
                           power = power)
