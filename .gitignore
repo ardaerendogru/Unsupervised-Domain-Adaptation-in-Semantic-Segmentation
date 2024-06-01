@@ -4,7 +4,7 @@ GTA5/labels
 models/deeplab_resnet_pretrained_imagenet.pth
 wandb/
 .env
-checkpoints/**/*
-results/**/*
+checkpoints/*
+results/*
 **/__pycache__/
 literature.txt
