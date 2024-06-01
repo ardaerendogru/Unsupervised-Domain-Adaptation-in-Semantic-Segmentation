@@ -99,14 +99,15 @@ class GTA5(Dataset):
         label = self._convert_rgb_to_label(Image.open(label_path).convert('RGB'))
         img, label = np.array(img), np.array(label)
 
-
-        if self.transform:
-            transformed = self.transform(image=img, mask=label)
-            img, label = transformed['image'], transformed['mask']
         if self.FDA:
             target_image_path = random.choice(self.target_images)[1]
             target_image = Image.open(target_image_path).convert('RGB').resize(img.shape[1::-1])
             img = FDA_transform(img, np.array(target_image), beta=self.FDA)
+            
+        if self.transform:
+            transformed = self.transform(image=img, mask=label)
+            img, label = transformed['image'], transformed['mask']
+        
 
         img = torch.from_numpy(img).permute(2, 0, 1).float()/255
         label = torch.from_numpy(label).long()

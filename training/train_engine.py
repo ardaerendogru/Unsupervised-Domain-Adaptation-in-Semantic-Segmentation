@@ -3,10 +3,11 @@ import torch
 from utils import poly_lr_scheduler, fast_hist, per_class_iou
 import numpy as np 
 import random
-from utils import generate_cow_mask
+from utils import generate_cow_mask, generate_class_mask, mix
 import torch.nn.functional as F
 from typing import Tuple, List
 from typing import Optional
+from config import occurence
 import time
 def train_step(
         model:torch.nn.Module, 
@@ -44,7 +45,7 @@ def train_step(
         image, label = image.to(device), label.type(torch.LongTensor).to(device)
         if model_name == "bisenet":
             out, sup1, sup2 = model(image)
-            loss = loss_fn(out, label) + loss_fn(sup1, label) + loss_fn(sup2, label)
+            loss = loss_fn(out, label) #+ (loss_fn(sup1, label) + loss_fn(sup2, label))*0
         else:
             out = model(image)
             loss = loss_fn(out, label)
@@ -111,11 +112,7 @@ def train_step_dacs(
     total_mixed_iou = np.zeros(class_number)
 
     model.train()
-    prev_time = time.time()
     for step, (image, label) in enumerate(dataloader):
-        if step % 120 == 119:
-            print(f"Processing image {step/len(dataloader)}, ----- {time.time() - prev_time}")
-            prev_time = time.time()
         image, label = image.to(device), label.long().to(device)
         selected_target_images = random.choice(target_images).to(device)
         selected_target_images = selected_target_images[0:image.shape[0],:,:,:]
@@ -123,26 +120,37 @@ def train_step_dacs(
         
         label_target, _, _ = model(selected_target_images)
         label_target = torch.argmax(torch.softmax(label_target, dim=1), dim=1).long()
+        masks = []
+        for i in range(image.size(0)):  # Iterate over each image in the batch
+            image_classes = torch.unique(label_target[i]).sort()[0]
+            image_classes = image_classes[image_classes != 255]  # Exclude the ignore class
+            nclasses = image_classes.shape[0]
+            if False:
+                occurence = [occurence[str(i.item())] for i in image_classes]
+                occurence = [i/sum(occurence) for i in occurence]
+                selected_classes = image_classes[torch.Tensor(np.random.choice(nclasses, int((nclasses - nclasses % 2) / 2), replace=False, p=occurence)).long()].cuda()
+            else:
+                selected_classes = image_classes[torch.Tensor(np.random.choice(nclasses, int((nclasses - nclasses % 2) / 2), replace=False)).long()].cuda()
+            masks.append(generate_class_mask(label_target[i], selected_classes))
 
-        mask = generate_cow_mask((image.shape[-2], image.shape[-1]), sigma, 0.5, image.shape[0])
-        mask = torch.from_numpy(mask).to(device)
+        mask = torch.stack(masks)
 
-        mixed_images = image * mask + selected_target_images * (1 - mask)
-        mixed_labels = label * mask.squeeze(1) + label_target * (1 - mask.squeeze(1))
+        mixed_images = image * mask.unsqueeze(1) + selected_target_images * (1 - mask.unsqueeze(1))
+        mixed_labels = label * mask + label_target * (1 - mask)
 
         mixed_images = mixed_images.float()
         mixed_labels = mixed_labels.long()
         if model_name == "bisenet":
             out_source, aux1, aux2 = model(image)
-            loss_source = loss_fn(out_source, label) + loss_fn(aux1, label) + loss_fn(aux2, label)
+            loss_source = loss_fn(out_source, label) #+ loss_fn(aux1, label) + loss_fn(aux2, label)
         else:
             out_source = model(image)
             loss_source = loss_fn(out_source, label)
         total_loss+=loss_source.item()
         
         if model_name == "bisenet":
-            out_mixed, aux1, aux2 = model(mixed_images)
-            loss_mixed = loss_fn(out_mixed, mixed_labels) + loss_fn(aux1, mixed_labels) + loss_fn(aux2, mixed_labels)
+            out_mixed, aux1mix, aux2mix = model(mixed_images)
+            loss_mixed = loss_fn(out_mixed, mixed_labels) #+ loss_fn(aux1mix, mixed_labels) + loss_fn(aux2mix, mixed_labels)
         else:
             out_mixed = model(mixed_images)
             loss_mixed = loss_fn(out_mixed, mixed_labels)
