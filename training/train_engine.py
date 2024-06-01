@@ -122,7 +122,7 @@ def train_step_dacs(
         label_target = torch.argmax(torch.softmax(label_target, dim=1), dim=1).long()
         masks = []
         for i in range(image.size(0)):  # Iterate over each image in the batch
-            image_classes = torch.unique(label_target[i]).sort()[0]
+            image_classes = torch.unique(label[i]).sort()[0]
             image_classes = image_classes[image_classes != 255]  # Exclude the ignore class
             nclasses = image_classes.shape[0]
             if False:
@@ -131,7 +131,7 @@ def train_step_dacs(
                 selected_classes = image_classes[torch.Tensor(np.random.choice(nclasses, int((nclasses - nclasses % 2) / 2), replace=False, p=occurence)).long()].cuda()
             else:
                 selected_classes = image_classes[torch.Tensor(np.random.choice(nclasses, int((nclasses - nclasses % 2) / 2), replace=False)).long()].cuda()
-            masks.append(generate_class_mask(label_target[i], selected_classes))
+            masks.append(generate_class_mask(label[i], selected_classes))
 
         mask = torch.stack(masks)
 
