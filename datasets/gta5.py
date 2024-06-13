@@ -108,6 +108,8 @@ class GTA5(Dataset):
             transformed = self.transform(image=img, mask=label)
             img, label = transformed['image'], transformed['mask']
         
+        
+        
 
         img = torch.from_numpy(img).permute(2, 0, 1).float()/255
         label = torch.from_numpy(label).long()

@@ -59,6 +59,37 @@ GTA5_STD = [63.8022, 62.4980, 62.0512]
 #     ])
 # }
 
+
+augmentations = {
+    'transform1': A.Compose([
+        A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
+        A.HorizontalFlip(p=0.5),
+        A.ColorJitter(p=0.5),
+
+    ]),
+    'transform2': A.Compose([
+        A.ColorJitter(p=0.5),
+        A.GaussianBlur(p=0.5),
+        A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
+
+
+
+    ]),
+    'transform3': A.Compose([
+        A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
+        A.HorizontalFlip(p=0.5),
+        A.GaussianBlur(p=0.5),
+    ]),
+    'transform4': A.Compose([
+        A.Resize(GTA5_SIZE[0], GTA5_SIZE[1]),
+        A.ColorJitter(p=0.5),
+        A.GaussianBlur(p=0.5),
+        A.GaussNoise(p=0.5),
+
+    ]),
+
+}
+
 occurence = {'0': 0.4736585289252789,
  '1': 0.037353923869027014,
  '2': 0.1389279692559401,
