@@ -17,6 +17,3 @@ results/*
 *.svg
 # Ignore environment files
 .env
-
-# Ignore specific files
-literature.txt
