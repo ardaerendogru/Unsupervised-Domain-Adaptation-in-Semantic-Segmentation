@@ -3,7 +3,6 @@ Cityscapes/Cityspaces
 GTA5/images
 GTA5/labels
 wandb/
-results/*
 **/__pycache__/
 
 # Ignore specific file types
