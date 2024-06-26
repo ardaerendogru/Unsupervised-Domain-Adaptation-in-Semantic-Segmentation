@@ -7,7 +7,6 @@ from utils import generate_cow_mask, generate_class_mask, mix
 import torch.nn.functional as F
 from typing import Tuple, List
 from typing import Optional
-from config import occurence
 import time
 def train_step(
         model:torch.nn.Module, 
@@ -125,12 +124,9 @@ def train_step_dacs(
             image_classes = torch.unique(label[i]).sort()[0]
             image_classes = image_classes[image_classes != 255]  # Exclude the ignore class
             nclasses = image_classes.shape[0]
-            if False:
-                occurence = [occurence[str(i.item())] for i in image_classes]
-                occurence = [i/sum(occurence) for i in occurence]
-                selected_classes = image_classes[torch.Tensor(np.random.choice(nclasses, int((nclasses - nclasses % 2) / 2), replace=False, p=occurence)).long()].cuda()
-            else:
-                selected_classes = image_classes[torch.Tensor(np.random.choice(nclasses, int((nclasses - nclasses % 2) / 2), replace=False)).long()].cuda()
+          
+            
+            selected_classes = image_classes[torch.Tensor(np.random.choice(nclasses, int((nclasses - nclasses % 2) / 2), replace=False)).long()].cuda()
             masks.append(generate_class_mask(label[i], selected_classes))
 
         mask = torch.stack(masks)
@@ -278,7 +274,10 @@ def train(
     init_lr = optimizer.param_groups[0]['lr']
     if target_dataloader:
         target_images = [image for image, _ in target_dataloader]
-        
+    if 'bisenet' in model_name:
+        model_name = 'bisenet'
+    elif 'deeplab' in model_name:
+        model_name = 'deeplab'
     for epoch in tqdm(range(epochs)):
         if target_dataloader:
             train_loss, train_miou, train_iou = train_step_dacs(model= model,
