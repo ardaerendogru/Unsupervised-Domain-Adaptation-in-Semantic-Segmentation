@@ -31,9 +31,7 @@ def compute_flops(model:torch.nn.Module, height:int = 512, width:int = 1024)->di
 
     return ret_dict
 
-def get_latency_and_fps(model: torch.nn.Module, height: int = 512, width: int = 1024, iterations: int = 1000, device:str='cuda') -> tuple:
-
-
+def get_latency_and_fps(model: torch.nn.Module, height: int = 512, width: int = 1024, iterations: int = 1000, device: str = 'cuda') -> tuple:
     """
     Measures the latency and frames per second (FPS) of a given model on a specified input size over a number of iterations.
 
@@ -42,32 +40,35 @@ def get_latency_and_fps(model: torch.nn.Module, height: int = 512, width: int = 
         height (int): The height of the input images.
         width (int): The width of the input images.
         iterations (int, optional): The number of iterations to measure. Defaults to 1000.
+        device (str, optional): The computation device ('cuda' or 'cpu'). Defaults to 'cuda'.
 
     Returns:
         tuple: A tuple containing the mean latency in milliseconds, the standard deviation of latency in milliseconds,
                the mean FPS, and the standard deviation of FPS.
     """
 
+    # Ensure the model is in evaluation mode and on the correct device
+    model.eval()
+    model.to(device)
 
     latencies = []
     fps_records = []
-    model.eval()
-    model = model.to(device)
+
     with torch.no_grad():
         for _ in range(iterations):
-            image = torch.zeros((1, 3, height, width)).to(device)
-            start_time = time.time()
+            image = torch.zeros((1, 3, height, width), device=device)
+            start_time = copy.deepcopy(time.time())
             model(image)
-            end_time = time.time() 
+            end_time = copy.deepcopy(time.time())
             latency = end_time - start_time
             latencies.append(latency)
             fps_records.append(1 / latency)
-    
-    mean_latency = np.mean(latencies) * 1000  # Convert to milliseconds
-    std_latency = np.std(latencies) * 1000    # Convert to milliseconds
     mean_fps = np.mean(fps_records)
     std_fps = np.std(fps_records)
+    mean_latency = np.mean(latencies) * 1000  # Convert to milliseconds
+    std_latency = np.std(latencies) * 1000    # Convert to milliseconds
     
+
     return mean_latency, std_latency, mean_fps, std_fps
 
 def save_results(model:torch.nn.Module, model_results:list, filename:str, height:int, width:int, iterations:int, ignore_model_measurements:bool=False, device:str='cuda')->None:
